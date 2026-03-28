@@ -1,0 +1,64 @@
+import streamlit as st
+import yfinance as yf
+import plotly.graph_objects as go
+
+# 1. Set up the web page layout
+st.set_page_config(page_title="Crypto Dashboard", layout="wide", page_icon="📈")
+st.title("📈 Live Crypto Market Dashboard")
+st.write("Analyze real-time market data for Bitcoin and Ethereum.")
+
+# 2. Add a web widget: Let the user select the timeframe!
+# This dropdown will automatically update the chart when changed
+time_period = st.selectbox(
+    "Select Time Period for Analysis:", 
+    ["1mo", "3mo", "6mo", "1y", "max"], 
+    index=1 # Defaults to "3mo"
+)
+
+st.divider() # Adds a nice visual line
+
+# 3. Fetch the data based on the web dropdown selection
+with st.spinner(f"Fetching live market data for the last {time_period}..."):
+    btc_data = yf.download("BTC-USD", period=time_period)
+    eth_data = yf.download("ETH-USD", period=time_period)
+
+# 4. Build the Plotly chart (same as before)
+fig = go.Figure()
+
+fig.add_trace(
+    go.Scatter(
+        x=btc_data.index, y=btc_data['Close'].squeeze(), 
+        mode='lines', name='Bitcoin (BTC)', line=dict(color='#F7931A', width=2)
+    )
+)
+
+fig.add_trace(
+    go.Scatter(
+        x=eth_data.index, y=eth_data['Close'].squeeze(), 
+        mode='lines', name='Ethereum (ETH)', yaxis="y2", line=dict(color='#627EEA', width=2)
+    )
+)
+
+fig.update_layout(
+    xaxis_title="Date",
+    yaxis_title="Bitcoin Price (USD)",
+    yaxis2=dict(title="Ethereum Price (USD)", overlaying="y", side="right"),
+    template="plotly_dark",
+    hovermode="x unified",
+    legend=dict(x=0.01, y=0.99)
+)
+
+# 5. The Magic Command: Render the chart on the web page!
+st.plotly_chart(fig, use_container_width=True)
+
+# 6. Add some raw data tables at the bottom for deeper analysis
+st.subheader("Raw Market Data (Latest 5 Days)")
+col1, col2 = st.columns(2)
+
+with col1:
+    st.write("**Bitcoin (BTC)**")
+    st.dataframe(btc_data.tail())
+
+with col2:
+    st.write("**Ethereum (ETH)**")
+    st.dataframe(eth_data.tail())
